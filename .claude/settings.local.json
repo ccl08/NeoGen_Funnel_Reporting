@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bq version:*)",
+      "Bash(python3 -c \"import google.cloud.bigquery\")",
+      "Bash(pip3 install:*)",
+      "Bash(pip install:*)",
+      "Bash(git -C /Users/chriscespedes/Documents/WeLo/NeoGen status)",
+      "Bash(gh auth:*)",
+      "Bash(gcloud services:*)"
+    ]
+  }
+}
