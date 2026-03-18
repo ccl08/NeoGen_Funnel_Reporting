@@ -94,6 +94,7 @@ session_segmentation AS (
     ) AS is_pdp,
     LOGICAL_OR(REGEXP_CONTAINS(page_path, r"/my-account/")) AS is_my_account,
     -- Funnel Logic
+    LOGICAL_OR(event_name = 'view_item')      AS has_view_item,
     LOGICAL_OR(event_name = 'view_item_list') AS has_view_item_list,
     LOGICAL_OR(event_name = 'add_to_cart')    AS has_atc,
     LOGICAL_OR(event_name = 'begin_checkout') AS has_checkout,
@@ -117,6 +118,7 @@ unpivoted_segments AS (
     IFNULL(page_location,   '(not set)') AS page_location,
     user_pseudo_id,
     session_id,
+    has_view_item,
     has_view_item_list,
     has_atc,
     has_checkout,
@@ -148,6 +150,7 @@ SELECT
   page_location,
   COUNT(DISTINCT user_pseudo_id)                                    AS total_users,
   COUNT(DISTINCT session_id)                                        AS sessions,
+  COUNT(DISTINCT CASE WHEN has_view_item      THEN user_pseudo_id END) AS view_item_users,
   COUNT(DISTINCT CASE WHEN has_view_item_list THEN user_pseudo_id END) AS view_item_list_users,
   COUNT(DISTINCT CASE WHEN has_atc      THEN user_pseudo_id END)    AS atc_users,
   COUNT(DISTINCT CASE WHEN has_checkout THEN user_pseudo_id END)    AS checkout_users,
