@@ -87,7 +87,7 @@ session_segmentation AS (
       event_name = 'view_search_results'
       OR REGEXP_CONTAINS(page_path, r"/search/")
     ) AS is_search,
-    LOGICAL_OR(REGEXP_CONTAINS(page_path, r"^(.*/)?categories/[^/]+/$")) AS is_pcp,
+    LOGICAL_OR(REGEXP_CONTAINS(page_path, r"^(.*/)?categories/[^/]+/?$")) AS is_pcp,
     LOGICAL_OR(
       REGEXP_CONTAINS(page_path, r"^(.*/)?categories/[^/]+/[^/]+/?$")
       OR REGEXP_CONTAINS(page_path, r"/Addons/")
