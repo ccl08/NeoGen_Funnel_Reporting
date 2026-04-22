@@ -1,33 +1,43 @@
-import re
+"""Run the KPI funnel pipeline ad-hoc against BigQuery.
+
+Executes 01_session_facts.sql then 02_kpi_funnel_v2.sql as a single
+multi-statement script. Same script the daily schedule runs.
+
+Usage:
+    python run.py
+"""
+from pathlib import Path
+
 from google.cloud import bigquery
-from tabulate import tabulate
 
-client = bigquery.Client(project="neogen-ga4-export")
+PROJECT_ID = "neogen-ga4-export"
+SQL_FILES = ["01_session_facts.sql", "02_kpi_funnel_v2.sql"]
 
-with open("main.sql") as f:
-    query = f.read()
 
-# Strip CREATE OR REPLACE TABLE so it runs as a plain SELECT
-query = re.sub(r"CREATE OR REPLACE TABLE\s+`[^`]+`\s+AS\s*", "", query, flags=re.IGNORECASE)
+def build_script() -> str:
+    here = Path(__file__).parent
+    parts = []
+    for fname in SQL_FILES:
+        sql = (here / fname).read_text().strip()
+        if not sql.endswith(";"):
+            sql += ";"
+        parts.append(f"-- === {fname} ===\n{sql}")
+    return "\n\n".join(parts)
 
-print("Running query...")
-job = client.query(query)
 
-# Script job: fetch results from the last child job
-job.result()
-child_jobs = list(client.list_jobs(parent_job=job))
+def main():
+    client = bigquery.Client(project=PROJECT_ID)
+    script = build_script()
 
-if child_jobs:
-    results = child_jobs[-1].result()
-else:
-    results = job.result()
+    print(f"Submitting multi-statement script ({len(SQL_FILES)} files)...")
+    job = client.query(script)
+    job.result()
 
-print("\n--- Preview (first 20 rows) ---\n")
-df = results.to_dataframe()
+    print(f"Done. Job id: {job.job_id}")
+    for child in client.list_jobs(parent_job=job):
+        stmt = (child.query or "").strip().split("\n", 1)[0][:80]
+        print(f"  - {child.job_id}  {stmt}")
 
-# Drop long URL columns and truncate remaining text columns for readability
-df = df.drop(columns=["page_location", "page_title"], errors="ignore")
-str_cols = df.select_dtypes(include="object").columns
-df[str_cols] = df[str_cols].apply(lambda col: col.str.slice(0, 30))
 
-print(tabulate(df.head(20), headers="keys", tablefmt="rounded_outline", showindex=False))
+if __name__ == "__main__":
+    main()
