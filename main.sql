@@ -93,6 +93,7 @@ session_segmentation AS (
       OR REGEXP_CONTAINS(page_path, r"/Addons/")
     ) AS is_pdp,
     LOGICAL_OR(REGEXP_CONTAINS(page_path, r"/my-account/")) AS is_my_account,
+    LOGICAL_OR(REGEXP_CONTAINS(page_path, r".*/solutions/.*")) AS is_solutions,
     -- Funnel Logic
     LOGICAL_OR(event_name = 'view_item')      AS has_view_item,
     LOGICAL_OR(event_name = 'view_item_list') AS has_view_item_list,
@@ -130,7 +131,8 @@ unpivoted_segments AS (
     STRUCT('2. Search'     AS Segment, is_search     AS valid),
     STRUCT('3. PCP'        AS Segment, is_pcp        AS valid),
     STRUCT('4. Product'    AS Segment, is_pdp        AS valid),
-    STRUCT('5. My Account' AS Segment, is_my_account AS valid)
+    STRUCT('5. My Account' AS Segment, is_my_account AS valid),
+    STRUCT('6. Solutions'  AS Segment, is_solutions  AS valid)
   ]) AS s
   WHERE s.valid = TRUE
 )
