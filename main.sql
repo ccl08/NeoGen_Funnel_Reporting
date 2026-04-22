@@ -27,6 +27,7 @@ WITH raw_events AS (
     GetStringParam(event_params, 'market_id') AS market_id,
     GetStringParam(event_params, 'priority_region') AS priority_region,
     GetStringParam(event_params, 'page_title') AS page_title,
+    GetStringParam(event_params, 'logged_in_status') AS logged_in_status,
     -- Item-Scoped Dimensions (Flattened from Items Array)
     CAST(GetIntParam(item.item_params, 'item_sku') AS STRING) AS item_sku,
     item.item_category AS product_class,
@@ -99,7 +100,9 @@ session_segmentation AS (
     LOGICAL_OR(event_name = 'view_item_list') AS has_view_item_list,
     LOGICAL_OR(event_name = 'add_to_cart')    AS has_atc,
     LOGICAL_OR(event_name = 'begin_checkout') AS has_checkout,
-    LOGICAL_OR(transaction_id IS NOT NULL AND transaction_id != '(not set)') AS has_purchase
+    LOGICAL_OR(transaction_id IS NOT NULL AND transaction_id != '(not set)') AS has_purchase,
+    -- Logged-in flag: TRUE if user was logged in at any event during the session
+    LOGICAL_OR(logged_in_status = 'true') AS is_logged_in_session
   FROM enriched_events
   GROUP BY 1, 2, 3
 ),
@@ -124,6 +127,7 @@ unpivoted_segments AS (
     has_atc,
     has_checkout,
     has_purchase,
+    IF(is_logged_in_session, 'true', 'false') AS logged_in_status,
     s.Segment
   FROM session_segmentation
   CROSS JOIN UNNEST([
@@ -148,6 +152,7 @@ SELECT
   super_class,
   item_sku,
   Segment,
+  logged_in_status,
   page_title,
   page_location,
   COUNT(DISTINCT user_pseudo_id)                                    AS total_users,
@@ -158,4 +163,4 @@ SELECT
   COUNT(DISTINCT CASE WHEN has_checkout THEN user_pseudo_id END)    AS checkout_users,
   COUNT(DISTINCT CASE WHEN has_purchase THEN user_pseudo_id END)    AS purchase_users
 FROM unpivoted_segments
-GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11;
+GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12;
