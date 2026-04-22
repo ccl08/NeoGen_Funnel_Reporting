@@ -33,7 +33,7 @@ WITH raw_events AS (
   FROM `neogen-ga4-export.analytics_331328809.events_*`
   LEFT JOIN UNNEST(items) AS item
   WHERE
-    _TABLE_SUFFIX BETWEEN '20251201' AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+    _TABLE_SUFFIX BETWEEN '20250601' AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
     AND device.web_info.hostname = 'www.neogen.com'
     AND event_name IN (
       'page_view', 'screen_view', 'view_search_results',
