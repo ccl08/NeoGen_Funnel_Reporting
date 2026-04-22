@@ -15,6 +15,7 @@ WITH pdp_events AS (
       CAST((SELECT value.int_value FROM UNNEST(event_params) WHERE key = 'ga_session_id') AS STRING)
     ) AS session_id,
     (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location') AS page_location,
+    (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_title')    AS page_title,
     event_name
   FROM `neogen-ga4-export.analytics_331328809.events_*`
   WHERE _TABLE_SUFFIX BETWEEN '20250601' AND FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
@@ -27,6 +28,7 @@ enriched_events AS (
   SELECT
     e.date,
     e.page_location,
+    e.page_title,
     e.session_id,
     e.user_pseudo_id,
     e.event_name,
@@ -192,6 +194,7 @@ SELECT
   master_category,
   page_type,
   page_location,
+  IFNULL(page_title, '(not set)') AS page_title,
   COUNT(DISTINCT session_id)                                              AS total_sessions_on_page,
   COUNT(*)                                                                AS total_page_views,
   COUNT(DISTINCT IF(session_id IN (SELECT session_id FROM cart_sessions),
@@ -199,5 +202,5 @@ SELECT
 FROM page_views
 GROUP BY date, market_id, priority_region, line_of_business, item_catalog,
          product_class, super_class, item_sku, logged_in_status,
-         PDP_Brand, category_lookup, master_category, page_type, page_location
+         PDP_Brand, category_lookup, master_category, page_type, page_location, page_title
 ORDER BY date DESC, sessions_that_added_to_cart DESC;
